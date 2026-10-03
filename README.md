@@ -199,7 +199,9 @@ async def receive_media(message: Message, state: FSMContext):
 
     if not text:
         await message.answer(
-            "<b>❌ Пожалуйста, отправьте заявку обычным текстовым сообщением.</b>"
+            "<b>❌ Пожалуйста, отправьте заявку обычным текстовым сообщением.</b>",
+             parse_mode = 'HTML'
+
         )
         return
 
@@ -219,7 +221,9 @@ async def receive_media(message: Message, state: FSMContext):
 
     await message.answer(
         "<b>✅ Ваша заявка отправлена оператору.\n\n</b>"
-        "<b>Ожидайте решения.</b>"
+        "<b>Ожидайте решения.</b>",
+        parse_mode = 'HTML'
+
     )
 
     await state.clear()
@@ -246,7 +250,9 @@ async def accept_media(callback: CallbackQuery):
             chat_id=client_id,
             text=(
                 "<b>✅ Ваша заявка на медиа принята!\n\n</b>"
-                "<b>Оператор рассмотрел вашу заявку.</b>"
+                "<b>Оператор рассмотрел вашу заявку.</b>",
+                parse_mode = 'HTML'
+
             )
         )
 
@@ -290,7 +296,9 @@ async def reject_media(callback: CallbackQuery):
         await bot.send_message(
             chat_id=client_id,
             text=(
-                "<b>❌ Ваша заявка на медиа отклонена.</b>"
+                "<b>❌ Ваша заявка на медиа отклонена.</b>",
+                parse_mode = 'HTML'
+
             )
         )
 
@@ -324,7 +332,9 @@ async def support_button(message: Message, state: FSMContext):
 
     if client_id in active_chats:
         await message.answer(
-            "<b>❌ У вас уже есть активный чат с оператором.</b>"
+            "<b>❌ У вас уже есть активный чат с оператором.</b>",
+             parse_mode = 'HTML'
+
         )
         return
 
@@ -336,7 +346,7 @@ async def support_button(message: Message, state: FSMContext):
         "<b>1.Ваш игровой никнейм.</b>\n"
         "<b>2.Когда был найден баг/произошла проблема (примерное время).</b>\n"
         "<b>3.Суть бага/проблемы.</b>\n\n"
-        "<b>Ваше сообщение будет передано оператору.</b>"
+        "<b>Ваше сообщение будет передано оператору.</b>",
         parse_mode = 'HTML'
     )
 

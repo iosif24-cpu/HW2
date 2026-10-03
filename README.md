@@ -19,7 +19,7 @@ from aiogram.types import (
 # НАСТРОЙКИ
 # ==========================================================
 
-BOT_TOKEN = "8239698118:AAGe6hWGd6ldsD7knrp6X3ZIKy3F4k1XSxM"
+BOT_TOKEN = "8994715532:AAGte-MAminPkUyABNNl2sN7xVOPEk745vc"
 
 # Оператор, который принимает заявки на медиа
 MEDIA_OPERATOR_ID = 8173491400

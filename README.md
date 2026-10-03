@@ -162,14 +162,40 @@ async def cancel_handler(message: Message, state: FSMContext):
 @dp.message(Form.waiting_media)
 async def process_media_request(message: Message, state: FSMContext):
     client_id = message.from_user.id
+    user_name = f"@{message.from_user.username}" if message.from_user.username else f"ID: {client_id}"
+    text = message.text or message.caption or "Без описания"
+    
     await state.clear()
     
-    await message.forward(chat_id=MEDIA_OPERATOR_ID)
-    await bot.send_message(
-        chat_id=MEDIA_OPERATOR_ID,
-        text=f"📥 Новая заявка на медиа от пользователя @{message.from_user.username or 'не указан'} (ID: {client_id}):",
-        reply_markup=media_keyboard(client_id)
+    operator_message = (
+        "📺 НОВАЯ ЗАЯВКА НА МЕДИА\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 Пользователь: {user_name}\n"
+        f"🆔 Telegram ID: {client_id}\n\n"
+        f"📝 Заявка:\n{text}"
     )
+    
+    # Если пользователь прикрепил фото или видео, отправляем их с единым текстом
+    if message.photo:
+        await bot.send_photo(
+            chat_id=MEDIA_OPERATOR_ID,
+            photo=message.photo[-1].file_id,
+            caption=operator_message,
+            reply_markup=media_keyboard(client_id)
+        )
+    elif message.video:
+        await bot.send_video(
+            chat_id=MEDIA_OPERATOR_ID,
+            video=message.video.file_id,
+            caption=operator_message,
+            reply_markup=media_keyboard(client_id)
+        )
+    else:
+        await bot.send_message(
+            chat_id=MEDIA_OPERATOR_ID,
+            text=operator_message,
+            reply_markup=media_keyboard(client_id)
+        )
     
     await message.answer("✅ Ваша заявка отправлена оператору!", reply_markup=main_keyboard())
 
@@ -195,14 +221,39 @@ async def support_button(message: Message, state: FSMContext):
 @dp.message(Form.waiting_support)
 async def process_support_request(message: Message, state: FSMContext):
     client_id = message.from_user.id
+    user_name = f"@{message.from_user.username}" if message.from_user.username else f"ID: {client_id}"
+    text = message.text or message.caption or "Без описания"
+    
     await state.clear()
 
-    await message.forward(chat_id=SUPPORT_OPERATOR_ID)
-    await bot.send_message(
-        chat_id=SUPPORT_OPERATOR_ID,
-        text=f"🛠 Запрос в техподдержку от @{message.from_user.username or 'не указан'} (ID: {client_id}):",
-        reply_markup=support_keyboard(client_id)
+    operator_message = (
+        "🛠 ЗАПРОС В ТЕХПОДДЕРЖКУ\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 Пользователь: {user_name}\n"
+        f"🆔 Telegram ID: {client_id}\n\n"
+        f"📝 Вопрос:\n{text}"
     )
+
+    if message.photo:
+        await bot.send_photo(
+            chat_id=SUPPORT_OPERATOR_ID,
+            photo=message.photo[-1].file_id,
+            caption=operator_message,
+            reply_markup=support_keyboard(client_id)
+        )
+    elif message.video:
+        await bot.send_video(
+            chat_id=SUPPORT_OPERATOR_ID,
+            video=message.video.file_id,
+            caption=operator_message,
+            reply_markup=support_keyboard(client_id)
+        )
+    else:
+        await bot.send_message(
+            chat_id=SUPPORT_OPERATOR_ID,
+            text=operator_message,
+            reply_markup=support_keyboard(client_id)
+        )
     
     await message.answer("✅ Ваше сообщение отправлено в техподдержку. Ожидайте ответа.", reply_markup=main_keyboard())
 
@@ -213,14 +264,23 @@ async def process_support_request(message: Message, state: FSMContext):
 @dp.callback_query(F.data.startswith("media_accept:"))
 async def media_accept(callback: CallbackQuery):
     client_id = int(callback.data.split(":")[1])
-    await callback.message.edit_text(callback.message.text + "\n\n✅ <b>Принято</b>", parse_mode="HTML")
+    # Проверяем, было ли это фото/видео (у них caption вместо text)
+    if callback.message.caption:
+        await callback.message.edit_caption(caption=callback.message.caption + "\n\n✅ <b>Принято</b>", parse_mode="HTML")
+    else:
+        await callback.message.edit_text(callback.message.text + "\n\n✅ <b>Принято</b>", parse_mode="HTML")
+        
     await bot.send_message(client_id, "✅ Ваша заявка на медиа была принята оператором!")
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("media_reject:"))
 async def media_reject(callback: CallbackQuery):
     client_id = int(callback.data.split(":")[1])
-    await callback.message.edit_text(callback.message.text + "\n\n❌ <b>Отклонено</b>", parse_mode="HTML")
+    if callback.message.caption:
+        await callback.message.edit_caption(caption=callback.message.caption + "\n\n❌ <b>Отклонено</b>", parse_mode="HTML")
+    else:
+        await callback.message.edit_text(callback.message.text + "\n\n❌ <b>Отклонено</b>", parse_mode="HTML")
+        
     await bot.send_message(client_id, "❌ К сожалению, ваша заявка на медиа была отклонена.")
     await callback.answer()
 
@@ -232,7 +292,10 @@ async def support_start_chat(callback: CallbackQuery):
     active_chats[client_id] = operator_id
     operator_chats[operator_id] = client_id
 
-    await callback.message.edit_text(callback.message.text + "\n\n💬 <b>Чат начат</b>", parse_mode="HTML")
+    if callback.message.caption:
+        await callback.message.edit_caption(caption=callback.message.caption + "\n\n💬 <b>Чат начат</b>", parse_mode="HTML")
+    else:
+        await callback.message.edit_text(callback.message.text + "\n\n💬 <b>Чат начат</b>", parse_mode="HTML")
     
     await bot.send_message(
         client_id,
